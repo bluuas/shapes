@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Drachen – Zerlegung wie GeoGebra</title>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<nav>
+    <a href="index.html">← Zurück zur Übersicht</a>
+    <a href="drachen.html" class="active">Drachen</a>
+    <a href="parallelogramm.html">Parallelogramm</a>
+    <a href="rhombus.html">Rhombus</a>
+</nav>
+
+<h2>Fläche eines Drachens – Zerlegung (GeoGebra-Stil)</h2>
+
+<div id="label">Zieh mich!</div>
+<input id="slider" type="range" min="0" max="1" step="0.001" value="0">
+
+<canvas id="canvas" width="900" height="450"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const slider = document.getElementById("slider");
+
+// Grundgrößen ähnlich wie im GeoGebra-Material
+const e = 300;   // Grundseite
+const f = 200;   // Höhe
+const ratio = 0.75; // Verhältnis der Seiten
+
+const x0 = 250; // Startpunkt x
+const y0 = 150; // Startpunkt y
+
+// Farben
+const lightBlue = "#ADD8FF";
+const darkBlue = "#0050FF";
+
+const padding = 10; // Abstand für Text
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const t = Number(slider.value);
+
+    // Punkte des Drachens
+    const A = {x: x0, y: y0 + f/2};
+    const B = {x: x0 + e*ratio, y: y0 + f};
+    const C = {x: x0 + e, y: y0 + f/2};
+    const D = {x: x0 + e*ratio, y: y0};
+    const E = {x: x0 + e*ratio, y: y0 + f/2}; // Schnittpunkt e f
+    
+    const midF = (B.y + D.y) / 2; // Mittelpunkt f-Linie
+
+    // Schrittgrenzen (wie GeoGebra)
+    const heightStart = 0.15;  // Höhenlinien erscheinen
+    const colorStart = 0.30;   // Dreiecke werden farbig
+    const mirrorStart = 0.55;  // Dreiecke spiegeln sich
+    const moveStart = 0.70;    // Dreiecke bewegen sich nach oben
+    const endStart = 0.80;     // Rechteck-Text erscheint
+
+    // Grundform
+    drawPolygon([A, C, D], lightBlue); // obere Hälfte immer zeichnen
+    if (t < colorStart) {
+        drawPolygon([A, B, C], lightBlue); // untere Hälfte nur bis Spiegelung
+    }
+    
+    // Hilfslinien einblenden / verblassen
+    drawLine(A.x, A.y, C.x, C.y, `rgba(0,0,0,${1-t})`);
+    drawLine(B.x, B.y, D.x, D.y, `rgba(0,0,0,${1-t})`);
+    if (t >= heightStart) {
+        drawRectangle(x0, y0, e, f, "transparent", `rgba(0,0,0,${t})`, [5, 5]);
+    }
+
+    // Höhe Text verschieben
+    if (t >= heightStart) {
+        const eStart = [x0 + (e/2), y0 + f/2 - padding];
+        const eStop = [x0 + (e/2), y0 - padding];
+        const ePos = [
+            eStart[0] + (eStop[0] - eStart[0]) * Math.min((t - heightStart) / (colorStart - heightStart), 1),
+            eStart[1] + (eStop[1] - eStart[1]) * Math.min((t - heightStart) / (colorStart - heightStart), 1)
+        ];
+        const fStart = [(x0 + e*ratio) + padding, midF - padding];
+        const fStop = [x0 + e + padding, midF + padding];
+        const fPos = [
+            fStart[0] + (fStop[0] - fStart[0]) * Math.min((t - heightStart) / (colorStart - heightStart), 1),
+            fStart[1] + (fStop[1] - fStart[1]) * Math.min((t - heightStart) / (colorStart - heightStart), 1)
+        ];
+        addText(ePos[0], ePos[1], "e");
+        addText(fPos[0], fPos[1], "f");
+    }
+    
+    // Dreiecke farbig markieren (aber nur bis es bewegt wird)
+    if (t >= colorStart && t < mirrorStart) {
+        drawPolygon([A, E, B], darkBlue);
+        drawPolygon([C, E, B], darkBlue);
+    }
+
+    // Dreiecke spiegeln 
+    if (t >= mirrorStart && t < moveStart) {
+        const mirrorT = Math.min((t - mirrorStart) / (moveStart - mirrorStart), 1);
+        const dx1 = (E.x - A.x) * mirrorT; // Spiegelungspfad linkes Dreieck
+        const dx2 = (C.x - E.x) * mirrorT; // Spiegelungspfad rechtes Dreieck
+
+        // linkes Dreieck
+        drawPolygon([
+            {x: A.x + dx1, y: A.y},
+            {x: E.x - dx1, y: E.y},
+            {x: B.x - dx1, y: B.y}
+        ], darkBlue);
+
+        // rechtes Dreieck
+        drawPolygon([
+            {x: C.x - dx2, y: C.y},
+            {x: E.x + dx2, y: E.y},
+            {x: B.x + dx2, y: B.y}
+        ], darkBlue);
+    }
+
+    // nach oben verschieben
+    if (t >= moveStart) {
+        const moveT = Math.min((t - moveStart) / (endStart - moveStart), 1);
+        const dy = (f/2) * moveT;
+
+        // linkes Dreieck
+        drawPolygon([
+            {x: A.x, y: A.y - dy},
+            {x: E.x, y: E.y - dy},
+            {x: A.x, y: B.y - dy}
+        ], darkBlue);
+
+        // rechtes Dreieck
+        drawPolygon([
+            {x: C.x, y: C.y - dy},
+            {x: E.x, y: E.y - dy},
+            {x: C.x, y: B.y - dy}
+        ], darkBlue);
+    }
+
+    // Endzustand: Rechteck
+    if (t >= endStart) {
+        ctx.font = "26px Arial";
+        ctx.fillStyle = "green";
+        ctx.fillText("→ Rechteck", x0 + e + 40, y0 + 10);
+    }
+}
+
+function addText(x, y, text, color="black", font="20px Arial") {
+    ctx.font = font;
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+}
+
+function drawRectangle(x0, y0, width, height, fillColor = "rgba(0,0,0,0)", lineColor = "black", dash = []) {
+    ctx.fillStyle = fillColor;
+    ctx.setLineDash(dash);
+    ctx.beginPath();
+    ctx.rect(x0, y0, width, height);
+    ctx.fill();
+    ctx.strokeStyle = lineColor;
+    ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+function drawLine(x1, y1, x2, y2, color, dash = []) {
+    ctx.strokeStyle = color;
+    ctx.setLineDash(dash);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+function drawPolygon(pts, fillColor, lineColor = "black") {
+    ctx.fillStyle = fillColor;
+    ctx.strokeStyle = lineColor;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (const p of pts.slice(1)) ctx.lineTo(p.x, p.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+}
+
+slider.oninput = draw;
+draw();
+</script>
+
+</body>
+</html>
