@@ -1,6 +1,6 @@
 // Farben
 const lightBlue = "#ADD8FF";
-const darkBlue = "#0050FF";
+const darkBlue = "#5B8BFF";
 const darkGrey = "#333";
 
 // Common canvas utilities

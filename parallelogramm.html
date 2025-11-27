@@ -92,11 +92,11 @@ function draw() {
     if (t < moveStart) {
         ctx.fillText("b", A.x - 70, (A.y+D.y)/2);
         ctx.fillStyle = "#ADD8FF";
-        drawPolygon(ctx, [A,B,C,D]);
+        drawPolygon(ctx, [A,B,C,D], lightBlue);
     } else {
         ctx.fillStyle = "#ADD8FF";
 	const A_new = {x: A.x, y: A.y + h};
-	drawPolygon(ctx, [A, B, C, A_new]);
+	drawPolygon(ctx, [A, B, C, A_new], lightBlue);
     }
    
 
@@ -105,7 +105,6 @@ function draw() {
 
     // 3) Linkes Dreieck farbig markieren (aber nur bis es bewegt wird)
     if (t >= colorStart && t < moveStart) {
-        ctx.fillStyle = "#5B8BFF";
         drawPolygon(ctx, [T1,T2,T3]);
     }
     if (t >= heightStart) {
@@ -120,12 +119,11 @@ function draw() {
         const dx = (B.x - A.x) * moveT;
         const dy = (B.y - A.y) * moveT;
 
-        ctx.fillStyle = "#5B8BFF";
         drawPolygon(ctx, [
             {x:T1.x + dx, y:T1.y + dy},
             {x:T2.x + dx, y:T2.y + dy},
             {x:T3.x + dx, y:T3.y + dy}
-        ]);
+        ], darkBlue);
     }
 
     // 5) Endzustand: Rechteck
@@ -205,39 +203,20 @@ function drawParallelogrammQuiz() {
     const x = 75 * scale, y = 70 * scale;
     
     // Draw shape
-    ctx.fillStyle = '#ADD8FF';
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + a, y);
-    ctx.lineTo(x + a - skew, y + h);
-    ctx.lineTo(x - skew, y + h);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    drawPolygon(ctx, [
+        {x: x, y: y},
+        {x: x + a, y: y},
+        {x: x + a - skew, y: y + h},
+        {x: x - skew, y: y + h}
+    ], lightBlue);
     
-    // Draw dashed height line
-    ctx.strokeStyle = '#666';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([5, 5]);
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x, y + h);
-    ctx.stroke();
-    // Draw dashed baseline extension
-    ctx.beginPath();
-    ctx.moveTo(x - skew, y + h);
-    ctx.lineTo(x, y + h);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    // Draw dashed height and base line
+    drawLine(ctx, x, y, x, y + h, darkGrey, [5, 5]);
+    drawLine(ctx, x - skew, y + h, x, y + h, darkGrey, [5, 5]);
     
     // Labels
-    const fontSize = Math.max(12, 16 * scale);
-    ctx.font = fontSize + 'px Arial';
-    ctx.fillStyle = '#333';
-    ctx.fillText('a = ' + problem.a + ' cm', x + a/2 - 30 * scale, y - 10 * scale);
-    ctx.fillText('h = ' + problem.h + ' cm', x - 50 * scale, y + h/2);
+    drawText(ctx, x + a/2 - 30 * scale, y - 10 * scale, 'a = ' + problem.a + ' cm');
+    drawText(ctx, x - 50 * scale, y + h/2, 'h = ' + problem.h + ' cm');
 }
 
 function updateParallelogrammQuizDisplay() {

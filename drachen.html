@@ -244,40 +244,20 @@ function drawDrachenQuiz() {
     const x = canvas.width / 2, y = canvas.height / 2;
     
     // Draw shape
-    ctx.fillStyle = '#ADD8FF';
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x, y - f/2);
-    ctx.lineTo(x + e*0.6, y);
-    ctx.lineTo(x, y + f/2);
-    ctx.lineTo(x - e*0.4, y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    drawPolygon(ctx, [
+        {x: x, y: y - f/2},
+        {x: x + e*0.6, y: y},
+        {x: x, y: y + f/2},
+        {x: x - e*0.4, y: y}
+    ], lightBlue);
     
     // Draw dashed diagonal lines
-    ctx.strokeStyle = '#666';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([5, 5]);
-    // Horizontal diagonal (e)
-    ctx.beginPath();
-    ctx.moveTo(x - e*0.4, y);
-    ctx.lineTo(x + e*0.6, y);
-    ctx.stroke();
-    // Vertical diagonal (f)
-    ctx.beginPath();
-    ctx.moveTo(x, y - f/2);
-    ctx.lineTo(x, y + f/2);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    drawLine(ctx, x - e*0.4, y, x + e*0.6, y, darkGrey, [5, 5]);
+    drawLine(ctx, x, y - f/2, x, y + f/2, darkGrey, [5, 5]);
     
     // Labels
-    const fontSize = Math.max(12, 16 * scale);
-    ctx.font = fontSize + 'px Arial';
-    ctx.fillStyle = '#333';
-    ctx.fillText('e = ' + problem.e + ' cm', x - 30 * scale, y + f/2 + 25 * scale);
-    ctx.fillText('f = ' + problem.f + ' cm', x + e*0.6 + 10 * scale, y);
+    drawText(ctx, x - 30 * scale, y + f/2 + 25 * scale, 'e = ' + problem.e + ' cm');
+    drawText(ctx, x + e*0.6 + 10 * scale, y, 'f = ' + problem.f + ' cm');
 }
 
 function updateDrachenQuizDisplay() {

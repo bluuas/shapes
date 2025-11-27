@@ -91,31 +91,27 @@ function draw() {
     ctx.fillStyle = "black";
 
     // obere Seite immer
-    ctx.fillText("a", (A.x+B.x)/2, A.y - 10 * scale);
+    drawText(ctx, (A.x+B.x)/2, A.y - 10 * scale, "a");
 
     // linke Seite immer
-    ctx.fillText("a", (A.x+D.x)/2 - 20 * scale, (A.y+D.y)/2);
-
+    drawText(ctx, (A.x+D.x)/2 - 20 * scale, (A.y+D.y)/2, "a");
     // schräge Seiten nur bis Bewegung startet
     if (t < moveStart) {
-        ctx.fillText("a", (B.x+C.x)/2 + 10 * scale, (B.y+C.y)/2);
-        ctx.fillText("a", (C.x+D.x)/2, (C.y+D.y)/2 + 20 * scale);
+        drawText(ctx, (B.x+C.x)/2 + 10 * scale, (B.y+C.y)/2, "a");
+        drawText(ctx, (C.x+D.x)/2, (C.y+D.y)/2 + 20 * scale, "a");
     }
 
     // ========= 1) Rhombus zeichnen =========
-    ctx.fillStyle = "#ADD8FF";
-
     if (t < moveStart) {
-        drawPolygon(ctx, [A,B,C,D]);
+        drawPolygon(ctx, [A,B,C,D], lightBlue);
     } else {
         const A_new = {x: A.x, y: A.y + h};
-        drawPolygon(ctx, [A, B, C, A_new]);
+        drawPolygon(ctx, [A, B, C, A_new], lightBlue);
     }
 
     // ========= 2) Farbiges Dreieck vor der Bewegung =========
     if (t >= colorStart && t < moveStart) {
-        ctx.fillStyle = "#5B8BFF";
-        drawPolygon(ctx, [T1,T2,T3]);
+        drawPolygon(ctx, [T1,T2,T3], darkBlue);
     }
 
     // ========= 3) Dreieck verschieben =========
@@ -126,12 +122,11 @@ function draw() {
         moveDx = (B.x - A.x) * moveT;
         moveDy = (B.y - A.y) * moveT;
 
-        ctx.fillStyle = "#5B8BFF";
         drawPolygon(ctx, [
             {x:T1.x + moveDx, y:T1.y + moveDy},
             {x:T2.x + moveDx, y:T2.y + moveDy},
             {x:T3.x + moveDx, y:T3.y + moveDy}
-        ]);
+        ], darkBlue);
     }
 
     // ========= 4) Höhe + h-Beschriftung (IMMER GANZ OBEN!) =========
