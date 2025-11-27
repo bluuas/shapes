@@ -21,7 +21,9 @@
 <div id="label">Zieh mich!</div>
 <input id="slider" type="range" min="0" max="1" step="0.001" value="0">
 
-<canvas id="canvas" width="900" height="450"></canvas>
+<div class="canvas-container">
+    <canvas id="canvas"></canvas>
+</div>
 
 <script>
 const canvas = document.getElementById("canvas");
@@ -29,25 +31,47 @@ const ctx = canvas.getContext("2d");
 const slider = document.getElementById("slider");
 
 // === RHOMBUS PARAMETER ===
-const a = 180;                   // Seitenlänge (alle Seiten gleich)
-const h = 120;                   // Höhe des Rhombus
-const dx = Math.sqrt(a*a - h*h);  // Horizontale Verschiebung für gleiche Seitenlängen
+const baseA = 180;
+const baseH = 120;
+const baseOffsetX = 250;
+const baseOffsetY = 150;
 
-// Position und Punkte mit horizontalen Top/Bottom
-const offsetX = 250;
-const offsetY = 150;
+function getScaleFactor() {
+    return canvas.width / 900;
+}
 
-// Berechne horizontale Verschiebung für gleiche Seitenlängen
-const halfWidth = Math.sqrt(a*a - h*h);
+// Make canvas responsive
+function resizeCanvas() {
+    const container = canvas.parentElement;
+    const containerWidth = container.clientWidth;
+    const maxWidth = 900;
+    const maxHeight = 450;
+    
+    canvas.width = Math.min(containerWidth, maxWidth);
+    canvas.height = canvas.width * (maxHeight / maxWidth);
+    
+    draw();
+}
 
-const A = {x: offsetX, y: offsetY};
-const B = {x: offsetX + a, y: offsetY};
-const C = {x: offsetX + a - dx, y: offsetY + h};
-const D = {x: offsetX - dx, y: offsetY + h};
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
 function draw() {
-    ctx.clearRect(0,0,900,450);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
     const t = Number(slider.value);
+    
+    const scale = getScaleFactor();
+    const a = baseA * scale;
+    const h = baseH * scale;
+    const dx = Math.sqrt(a*a - h*h);
+    
+    const offsetX = baseOffsetX * scale;
+    const offsetY = baseOffsetY * scale;
+    
+    const A = {x: offsetX, y: offsetY};
+    const B = {x: offsetX + a, y: offsetY};
+    const C = {x: offsetX + a - dx, y: offsetY + h};
+    const D = {x: offsetX - dx, y: offsetY + h};
 
     // Schritte wie im Original
     const heightStart = 0.15;
@@ -61,19 +85,20 @@ function draw() {
     const T3 = {x:A.x, y:D.y};
 
     // ========= Seitenbeschriftungen =========
-    ctx.font = "20px Arial";
+    const fontSize = Math.max(12, 20 * scale);
+    ctx.font = fontSize + "px Arial";
     ctx.fillStyle = "black";
 
     // obere Seite immer
-    ctx.fillText("a", (A.x+B.x)/2, A.y - 10);
+    ctx.fillText("a", (A.x+B.x)/2, A.y - 10 * scale);
 
     // linke Seite immer
-    ctx.fillText("a", (A.x+D.x)/2 - 20, (A.y+D.y)/2);
+    ctx.fillText("a", (A.x+D.x)/2 - 20 * scale, (A.y+D.y)/2);
 
     // schräge Seiten nur bis Bewegung startet
     if (t < moveStart) {
-        ctx.fillText("a", (B.x+C.x)/2 + 10, (B.y+C.y)/2);
-        ctx.fillText("a", (C.x+D.x)/2, (C.y+D.y)/2 + 20);
+        ctx.fillText("a", (B.x+C.x)/2 + 10 * scale, (B.y+C.y)/2);
+        ctx.fillText("a", (C.x+D.x)/2, (C.y+D.y)/2 + 20 * scale);
     }
 
     // ========= 1) Rhombus zeichnen =========
@@ -93,18 +118,18 @@ function draw() {
     }
 
     // ========= 3) Dreieck verschieben =========
-    let dx = 0, dy = 0;
+    let moveDx = 0, moveDy = 0;
 
     if (t >= moveStart) {
         const moveT = Math.min((t - moveStart) / (endStart - moveStart), 1);
-        dx = (B.x - A.x) * moveT;
-        dy = (B.y - A.y) * moveT;
+        moveDx = (B.x - A.x) * moveT;
+        moveDy = (B.y - A.y) * moveT;
 
         ctx.fillStyle = "#5B8BFF";
         drawPolygon([
-            {x:T1.x + dx, y:T1.y + dy},
-            {x:T2.x + dx, y:T2.y + dy},
-            {x:T3.x + dx, y:T3.y + dy}
+            {x:T1.x + moveDx, y:T1.y + moveDy},
+            {x:T2.x + moveDx, y:T2.y + moveDy},
+            {x:T3.x + moveDx, y:T3.y + moveDy}
         ]);
     }
 
@@ -113,30 +138,34 @@ function draw() {
 
         // Höhe-Linie
         ctx.beginPath();
-        ctx.moveTo(A.x + dx, A.y + dy);
-        ctx.lineTo(A.x + dx, A.y + h + dy);
+        ctx.moveTo(A.x + moveDx, A.y + moveDy);
+        ctx.lineTo(A.x + moveDx, A.y + h + moveDy);
         ctx.strokeStyle = "black";
         ctx.lineWidth = 2;
         ctx.stroke();
 
         // h Position — bewegt sich mit dem Dreieck
-        const hx = A.x + dx - 20;
-        const hy = A.y + dy + h/2;
+        const hx = A.x + moveDx - 20 * scale;
+        const hy = A.y + moveDy + h/2;
 
         ctx.fillStyle = "black";
-        ctx.font = "20px Arial";
+        const fontSize = Math.max(12, 20 * scale);
+        ctx.font = fontSize + "px Arial";
         ctx.fillText("h", hx, hy);
     }
 
     // ========= 5) Endbeschriftung =========
     if (t >= endStart) {
-        ctx.font = "26px Arial";
+        const fontSize = Math.max(16, 26 * scale);
+        ctx.font = fontSize + "px Arial";
         ctx.fillStyle = "green";
-        ctx.fillText("→ Rechteck", B.x + 40, A.y + 10);
+        ctx.fillText("→ Rechteck", B.x + 40 * scale, A.y + 10 * scale);
     }
 }
 
 function drawPolygon(pts) {
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(pts[0].x, pts[0].y);
     for (const p of pts.slice(1)) ctx.lineTo(p.x, p.y);
@@ -314,7 +343,7 @@ draw();
     
     <div class="quiz-card">
         <div class="quiz-canvas-container">
-            <canvas id="rhombus-quiz-canvas" width="300" height="200"></canvas>
+            <canvas id="rhombus-quiz-canvas"></canvas>
         </div>
         
         <div class="quiz-dimensions">
@@ -357,16 +386,24 @@ currentProblems.rhombus = 0;
 function drawRhombusQuiz() {
     const canvas = document.getElementById('rhombus-quiz-canvas');
     const ctx = canvas.getContext('2d');
+    
+    // Make quiz canvas responsive
+    const container = canvas.parentElement;
+    const containerWidth = container.clientWidth;
+    const maxWidth = 900;
+    canvas.width = Math.min(containerWidth, maxWidth);
+    canvas.height = canvas.width * 0.5;
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     const problem = getCurrentProblem('rhombus');
-    const scaleFactor = 10;
-    const a = problem.a * scaleFactor;
-    const h = problem.h * scaleFactor;
-    const dx = Math.sqrt(a*a - h*h);  // Horizontale Verschiebung für gleiche Seitenlängen
+    const scale = canvas.width / 300;
+    const a = problem.a * 10 * scale;
+    const h = problem.h * 10 * scale;
+    const dx = Math.sqrt(a*a - h*h);
     
-    const offsetX = 150;
-    const offsetY = 50;
+    const offsetX = 150 * scale;
+    const offsetY = 50 * scale;
     
     // Draw rhombus with horizontal top/bottom (matching main animation)
     const A = {x: offsetX, y: offsetY};
@@ -402,10 +439,11 @@ function drawRhombusQuiz() {
     ctx.setLineDash([]);
     
     // Labels
-    ctx.font = '16px Arial';
+    const fontSize = Math.max(12, 16 * scale);
+    ctx.font = fontSize + 'px Arial';
     ctx.fillStyle = '#333';
-    ctx.fillText('a = ' + problem.a + ' cm', (A.x + B.x) / 2 - 30, A.y - 10);
-    ctx.fillText('h = ' + problem.h + ' cm', A.x - 50, A.y + h / 2);
+    ctx.fillText('a = ' + problem.a + ' cm', (A.x + B.x) / 2 - 30 * scale, A.y - 10 * scale);
+    ctx.fillText('h = ' + problem.h + ' cm', A.x - 50 * scale, A.y + h / 2);
 }
 
 function updateRhombusQuizDisplay() {
@@ -417,6 +455,12 @@ function updateRhombusQuizDisplay() {
     document.getElementById('rhombus-sol-answer').textContent = problem.answer;
     drawRhombusQuiz();
 }
+
+window.addEventListener('resize', function() {
+    if (document.getElementById('rhombus-quiz-canvas')) {
+        drawRhombusQuiz();
+    }
+});
 
 function newRhombusProblem() {
     getNextProblem('rhombus');

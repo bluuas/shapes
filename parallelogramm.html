@@ -21,27 +21,54 @@
 <div id="label">Zieh mich!</div>
 <input id="slider" type="range" min="0" max="1" step="0.001" value="0">
 
-<canvas id="canvas" width="900" height="450"></canvas>
+<div class="canvas-container">
+    <canvas id="canvas"></canvas>
+</div>
 
 <script>
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const slider = document.getElementById("slider");
 
-// Grundgrößen ähnlich wie im GeoGebra-Material
-const a = 240;   // Grundseite
-const h = 140;   // Höhe
-const skew = 90; // Schrägversatz
+// Grundgrößen ähnlich wie im GeoGebra-Material - will be scaled
+const baseA = 240;
+const baseH = 140;
+const baseSkew = 90;
+
+function getScaleFactor() {
+    return canvas.width / 900;
+}
+
+// Make canvas responsive
+function resizeCanvas() {
+    const container = canvas.parentElement;
+    const containerWidth = container.clientWidth;
+    const maxWidth = 900;
+    const maxHeight = 450;
+    
+    canvas.width = Math.min(containerWidth, maxWidth);
+    canvas.height = canvas.width * (maxHeight / maxWidth);
+    
+    draw();
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
 function draw() {
-    ctx.clearRect(0,0,900,450);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
     const t = Number(slider.value);
+    
+    const scale = getScaleFactor();
+    const a = baseA * scale;
+    const h = baseH * scale;
+    const skew = baseSkew * scale;
 
     // Punkte des Parallelogramms
-    const A = {x:250, y:150};
-    const B = {x:250 + a, y:150};
-    const C = {x:250 + a - skew, y:150 + h};
-    const D = {x:250 - skew, y:150 + h};
+    const A = {x:250 * scale, y:150 * scale};
+    const B = {x:250 * scale + a, y:150 * scale};
+    const C = {x:250 * scale + a - skew, y:150 * scale + h};
+    const D = {x:250 * scale - skew, y:150 * scale + h};
 
     // Dreieck zum Ausschneiden
     const T1 = {x:A.x, y:A.y};
@@ -55,9 +82,10 @@ function draw() {
     const endStart = 0.80;
 
     // Beschriftung a und b
-    ctx.font = "20px Arial";
+    const fontSize = Math.max(12, 20 * scale);
+    ctx.font = fontSize + "px Arial";
     ctx.fillStyle = "black";
-    ctx.fillText("a", (A.x+B.x)/2, A.y - 10);
+    ctx.fillText("a", (A.x+B.x)/2, A.y - 10 * scale);
 
     // 1) Parallelogramm
     if (t < moveStart) {
@@ -86,10 +114,10 @@ function draw() {
         ctx.strokeStyle = "black";
         ctx.lineWidth = 2;
         ctx.stroke();
-        ctx.font = "20px Arial";
-    ctx.fillStyle = "black";
+        ctx.font = fontSize + "px Arial";
+	ctx.fillStyle = "black";
 
-        ctx.fillText("h", A.x - 20, A.y + h/2);
+        ctx.fillText("h", A.x - 20 * scale, A.y + h/2);
     }
     // 4) Dreieck verschieben
     if (t >= moveStart) {
@@ -116,6 +144,8 @@ function draw() {
 }
 
 function drawPolygon(pts) {
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(pts[0].x, pts[0].y);
     for (const p of pts.slice(1)) ctx.lineTo(p.x, p.y);
@@ -293,7 +323,7 @@ draw();
     
     <div class="quiz-card">
         <div class="quiz-canvas-container">
-            <canvas id="parallelogramm-quiz-canvas" width="300" height="200"></canvas>
+            <canvas id="parallelogramm-quiz-canvas"></canvas>
         </div>
         
         <div class="quiz-dimensions">
@@ -336,14 +366,22 @@ currentProblems.parallelogramm = 0;
 function drawParallelogrammQuiz() {
     const canvas = document.getElementById('parallelogramm-quiz-canvas');
     const ctx = canvas.getContext('2d');
+    
+    // Make quiz canvas responsive
+    const container = canvas.parentElement;
+    const containerWidth = container.clientWidth;
+    const maxWidth = 900;
+    canvas.width = Math.min(containerWidth, maxWidth);
+    canvas.height = canvas.width * 0.5;
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     const problem = getCurrentProblem('parallelogramm');
-    const scaleFactor = 10;
-    const a = problem.a * scaleFactor;
-    const h = problem.h * scaleFactor;
-    const skew = 30;
-    const x = 75, y = 70;
+    const scale = canvas.width / 300;
+    const a = problem.a * 10 * scale;
+    const h = problem.h * 10 * scale;
+    const skew = 30 * scale;
+    const x = 75 * scale, y = 70 * scale;
     
     // Draw shape
     ctx.fillStyle = '#ADD8FF';
@@ -374,10 +412,11 @@ function drawParallelogrammQuiz() {
     ctx.setLineDash([]);
     
     // Labels
-    ctx.font = '16px Arial';
+    const fontSize = Math.max(12, 16 * scale);
+    ctx.font = fontSize + 'px Arial';
     ctx.fillStyle = '#333';
-    ctx.fillText('a = ' + problem.a + ' cm', x + a/2 - 30, y - 10);
-    ctx.fillText('h = ' + problem.h + ' cm', x - 50, y + h/2);
+    ctx.fillText('a = ' + problem.a + ' cm', x + a/2 - 30 * scale, y - 10 * scale);
+    ctx.fillText('h = ' + problem.h + ' cm', x - 50 * scale, y + h/2);
 }
 
 function updateParallelogrammQuizDisplay() {
@@ -389,6 +428,12 @@ function updateParallelogrammQuizDisplay() {
     document.getElementById('parallelogramm-sol-answer').textContent = problem.answer;
     drawParallelogrammQuiz();
 }
+
+window.addEventListener('resize', function() {
+    if (document.getElementById('parallelogramm-quiz-canvas')) {
+        drawParallelogrammQuiz();
+    }
+});
 
 function newParallelogrammProblem() {
     getNextProblem('parallelogramm');

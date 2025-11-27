@@ -50,6 +50,16 @@ canvas {
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     border-radius: 4px;
     display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.canvas-container {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
 }
 
 input[type=range] {

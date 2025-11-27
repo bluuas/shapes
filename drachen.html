@@ -21,20 +21,21 @@
 <div id="label">Zieh mich!</div>
 <input id="slider" type="range" min="0" max="1" step="0.001" value="0">
 
-<canvas id="canvas" width="900" height="450"></canvas>
+<div class="canvas-container">
+    <canvas id="canvas"></canvas>
+</div>
 
 <script>
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const slider = document.getElementById("slider");
 
-// Grundgrößen ähnlich wie im GeoGebra-Material
-const e = 300;   // Grundseite
-const f = 200;   // Höhe
-const ratio = 0.75; // Verhältnis der Seiten
-
-const x0 = 250; // Startpunkt x
-const y0 = 150; // Startpunkt y
+// Grundgrößen ähnlich wie im GeoGebra-Material - will be scaled
+const baseE = 300;
+const baseF = 200;
+const baseRatio = 0.75;
+const baseX0 = 250;
+const baseY0 = 150;
 
 // Farben
 const lightBlue = "#ADD8FF";
@@ -42,9 +43,38 @@ const darkBlue = "#0050FF";
 
 const padding = 10; // Abstand für Text
 
+function getScaleFactor() {
+    return canvas.width / 900;
+}
+
+// Make canvas responsive
+function resizeCanvas() {
+    const container = canvas.parentElement;
+    const containerWidth = container.clientWidth;
+    const maxWidth = 900;
+    const maxHeight = 450;
+    
+    canvas.width = Math.min(containerWidth, maxWidth);
+    canvas.height = canvas.width * (maxHeight / maxWidth);
+    
+    draw();
+}
+
+// Initial resize and add listener
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const t = Number(slider.value);
+    
+    // Scale everything based on canvas size
+    const scale = getScaleFactor();
+    const e = baseE * scale;
+    const f = baseF * scale;
+    const ratio = baseRatio;
+    const x0 = baseX0 * scale;
+    const y0 = baseY0 * scale;
 
     // Punkte des Drachens
     const A = {x: x0, y: y0 + f/2};
@@ -142,14 +172,17 @@ function draw() {
 
     // Endzustand: Rechteck
     if (t >= endStart) {
-        ctx.font = "26px Arial";
+        const fontSize = Math.max(16, 26 * scale);
+        ctx.font = fontSize + "px Arial";
         ctx.fillStyle = "green";
-        ctx.fillText("→ Rechteck", x0 + e + 40, y0 + 10);
+        ctx.fillText("→ Rechteck", x0 + e + 40 * scale, y0 + 10 * scale);
     }
 }
 
-function addText(x, y, text, color="black", font="20px Arial") {
-    ctx.font = font;
+function addText(x, y, text, color="black", fontSizeBase="20px Arial") {
+    const scale = getScaleFactor();
+    const fontSize = Math.max(12, 20 * scale);
+    ctx.font = fontSize + "px Arial";
     ctx.fillStyle = color;
     ctx.fillText(text, x, y);
 }
@@ -355,7 +388,7 @@ draw();
     
     <div class="quiz-card">
         <div class="quiz-canvas-container">
-            <canvas id="drachen-quiz-canvas" width="300" height="200"></canvas>
+            <canvas id="drachen-quiz-canvas"></canvas>
         </div>
         
         <div class="quiz-dimensions">
@@ -399,13 +432,21 @@ currentProblems.drachen = 0;
 function drawDrachenQuiz() {
     const canvas = document.getElementById('drachen-quiz-canvas');
     const ctx = canvas.getContext('2d');
+    
+    // Make quiz canvas responsive - match main canvas width
+    const container = canvas.parentElement;
+    const containerWidth = container.clientWidth;
+    const maxWidth = 900;
+    canvas.width = Math.min(containerWidth, maxWidth);
+    canvas.height = canvas.width * 0.5; // Maintain aspect ratio
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     const problem = getCurrentProblem('drachen');
-    const scaleFactor = 10;
-    const e = problem.e * scaleFactor;
-    const f = problem.f * scaleFactor;
-    const x = 150, y = 100;
+    const scale = canvas.width / 300; // Base width was 300
+    const e = problem.e * 10 * scale;
+    const f = problem.f * 10 * scale;
+    const x = canvas.width / 2, y = canvas.height / 2;
     
     // Draw shape
     ctx.fillStyle = '#ADD8FF';
@@ -437,10 +478,11 @@ function drawDrachenQuiz() {
     ctx.setLineDash([]);
     
     // Labels
-    ctx.font = '16px Arial';
+    const fontSize = Math.max(12, 16 * scale);
+    ctx.font = fontSize + 'px Arial';
     ctx.fillStyle = '#333';
-    ctx.fillText('e = ' + problem.e + ' cm', x - 30, y + f/2 + 25);
-    ctx.fillText('f = ' + problem.f + ' cm', x + e*0.6 + 10, y);
+    ctx.fillText('e = ' + problem.e + ' cm', x - 30 * scale, y + f/2 + 25 * scale);
+    ctx.fillText('f = ' + problem.f + ' cm', x + e*0.6 + 10 * scale, y);
 }
 
 function updateDrachenQuizDisplay() {
@@ -453,6 +495,13 @@ function updateDrachenQuizDisplay() {
     document.getElementById('drachen-sol-answer').textContent = problem.answer;
     drawDrachenQuiz();
 }
+
+// Redraw quiz on window resize
+window.addEventListener('resize', function() {
+    if (document.getElementById('drachen-quiz-canvas')) {
+        drawDrachenQuiz();
+    }
+});
 
 function newDrachenProblem() {
     getNextProblem('drachen');
